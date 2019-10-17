@@ -5,10 +5,7 @@
  */
 package karimandcoimage;
 
-import Singleton.DaoSIO;
-import com.mysql.jdbc.Connection;
 import java.awt.Color;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,10 +15,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import javax.swing.JFileChooser;
 import java.io.InputStream;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -37,11 +33,16 @@ public class ChoisirImage extends javax.swing.JPanel {
     DaoSIO connexion;
     JFileChooser fichier;
     InputStream stream;
+    InputStream imagePrint;
     File file;
 
-    public ChoisirImage(Connection connexion) {
+    public ChoisirImage() {
         initComponents();
-        this.connexion = DaoSIO.getInstance();
+        try {
+            this.connexion = DaoSIO.getInstance();
+        } catch (Exception e) {
+            this.connexion = null;
+        }
         fichier = new JFileChooser();
         FileFilter filter = new FileNameExtensionFilter("Images Uniquement", "jpg", "bmp", "jpeg", "png");
         fichier.setFileFilter(filter);
@@ -153,12 +154,12 @@ public class ChoisirImage extends javax.swing.JPanel {
             jLabelSelect.setText(pathFichier);
             try {
                 byte[] imagebyte = new byte[stream.available()];
-                stream.read(imagebyte);
+                imagePrint.read(imagebyte);
                 //  Lire le Blob en tableau
                 //  Convertion du tableau en image
                 ImageIcon imageFini = new ImageIcon(new ImageIcon(imagebyte).getImage().getScaledInstance(250, -1, Image.DEFAULT_CURSOR));
                 jLabelImages.setIcon(imageFini);
-            }  catch (Exception e) {
+            } catch (Exception e) {
                 //Echec de la convertion
                 Logger.getLogger(Image.class.getName()).log(Level.SEVERE, null, e);
             }
@@ -167,44 +168,42 @@ public class ChoisirImage extends javax.swing.JPanel {
     }//GEN-LAST:event_jButtonSelectFileMouseClicked
 
     private void jButtonSendMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonSendMouseClicked
-        if (!this.connexion.connexionActive()) {
-            //            Modifier le if pour vérifier si une image a été envoyée.
+        try {
+            this.connexion = DaoSIO.getInstance();
+        } catch (Exception e) {
+            this.connexion = null;
+        }
+        DaoSIOrequest daoReq = new DaoSIOrequest();
+        if (this.connexion.connexionActive()) {
             if (stream != null) {
                 if (file.length() <= 3000000) {
                     String req = "select photo from utilisateurs where identifiant='a'";
 
                     try {
-                        ResultSet lesTuples = connexion.requeteSelection(req);
+                        ResultSet lesTuples = daoReq.requeteSelection(req);
                         if (lesTuples.next()) {
-                            //a voir
-                            ////                        System.out.println(lesTuples.getString("photo"));
-                            //                        String maRequeteSQL2="update photo=? from utilisateurs where identifiant=a";
-                            //                        PreparedStatement maRequeteUpdate = this.connexion.prepareStatement(maRequeteSQL2);
-                            String reqUp = ("update utilisateurs set photo=" + (InputStream) stream + " where identifiant='a'");
-                            Integer update = this.connexion.requeteAction(reqUp);
+                            Integer update = daoReq.updateImage(stream, file);
                             if (update == 1) {
                                 jLabelSuccess.setForeground(Color.green);
                                 jLabelSuccess.setText("Image modifié !");
                             } else {
-                                jLabelSuccess.setForeground(Color.green);
+                                jLabelSuccess.setForeground(Color.red);
                                 jLabelSuccess.setText("Echec de la modification !");
                             }
                         } else {
                             //                        System.out.println("rien n'est retouré....");
-                             
                             //                     juste pour avoir la date
                             java.util.Date date = new java.util.Date();
                             java.sql.Date today = new java.sql.Date(date.getTime());
                             //                    Échantillons test
-                            String reqIn = ("insert into utilisateurs values (null,0,a,b,c,d,e,f," + today +"," + (InputStream) stream +  ")");
-                            
-                           
-                            Integer create = this.connexion.requeteAction(reqIn);
+//                            String reqIn = ("insert into utilisateurs values (null,0,'a','b','c','d','e','f'," + today + ",x'" + (InputStream) stream + "')");
+
+                            Integer create = daoReq.insertImage(0, "a", "b", "c", "d", "e", "f", today, stream, file);
                             if (create == 1) {
                                 jLabelSuccess.setForeground(Color.green);
                                 jLabelSuccess.setText("Image enregistrée !");
                             } else {
-                                jLabelSuccess.setForeground(Color.green);
+                                jLabelSuccess.setForeground(Color.red);
                                 jLabelSuccess.setText("Echec de l'enregistrement !");
                             }
                         }
@@ -231,6 +230,7 @@ public class ChoisirImage extends javax.swing.JPanel {
     public void encodeToBlob() {
         try {
             this.stream = new FileInputStream(file);
+            this.imagePrint = new FileInputStream(file);
 //            Essai d'un code qui nous permettait d'obtenir l'image en base64 mais pas de l'envoyer.
 //            byte[] bytes = new byte[(int)file.length()];
 //            fileInputstreamReader.read(bytes);
@@ -242,6 +242,13 @@ public class ChoisirImage extends javax.swing.JPanel {
         }
     }
 
+    public static void main(String[] args) {
+        JFrame test = new JFrame();
+        ChoisirImage pannel = new ChoisirImage();
+        test.getContentPane().add(pannel);
+        test.setSize(800, 600);
+        test.setVisible(true);
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonSelectFile;
