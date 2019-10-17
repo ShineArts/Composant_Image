@@ -17,3 +17,4 @@ ouvrir Netbeans aller dans l'onglet Team  puis aller dans Git  et enfin dans Clo
 
 
 
+d
