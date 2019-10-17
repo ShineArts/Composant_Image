@@ -15,6 +15,8 @@ Ensuite sélectionner votre composant avec netbeans ( ouvrir fichier ) .
 
 ouvrir Netbeans aller dans l'onglet Team  puis aller dans Git  et enfin dans Clone  mettre ce lien : https://github.com/Skoorpi-Dev/Composant_Image.git dans Repository URL et cliquer sur Finish
 
+## Dépendance 
+* MySqlConnector: https://repo1.maven.org/maven2/mysql/mysql-connector-java/5.1.48/mysql-connector-java-5.1.48.jar 
 
 
 
